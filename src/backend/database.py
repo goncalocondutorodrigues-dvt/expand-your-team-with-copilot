@@ -24,6 +24,16 @@ def init_database():
     if activities_collection.count_documents({}) == 0:
         for name, details in initial_activities.items():
             activities_collection.insert_one({"_id": name, **details})
+    else:
+        for name, details in initial_activities.items():
+            update_operation = {}
+
+            if "difficulty" in details:
+                update_operation["$set"] = {"difficulty": details["difficulty"]}
+            else:
+                update_operation["$unset"] = {"difficulty": ""}
+
+            activities_collection.update_one({"_id": name}, update_operation)
             
     # Initialize teacher accounts if empty
     if teachers_collection.count_documents({}) == 0:
@@ -35,6 +45,7 @@ initial_activities = {
     "Chess Club": {
         "description": "Learn strategies and compete in chess tournaments",
         "schedule": "Mondays and Fridays, 3:15 PM - 4:45 PM",
+        "difficulty": "Intermediate",
         "schedule_details": {
             "days": ["Monday", "Friday"],
             "start_time": "15:15",
@@ -46,6 +57,7 @@ initial_activities = {
     "Programming Class": {
         "description": "Learn programming fundamentals and build software projects",
         "schedule": "Tuesdays and Thursdays, 7:00 AM - 8:00 AM",
+        "difficulty": "Beginner",
         "schedule_details": {
             "days": ["Tuesday", "Thursday"],
             "start_time": "07:00",
@@ -68,6 +80,7 @@ initial_activities = {
     "Soccer Team": {
         "description": "Join the school soccer team and compete in matches",
         "schedule": "Tuesdays and Thursdays, 3:30 PM - 5:30 PM",
+        "difficulty": "Intermediate",
         "schedule_details": {
             "days": ["Tuesday", "Thursday"],
             "start_time": "15:30",
@@ -134,6 +147,7 @@ initial_activities = {
     "Weekend Robotics Workshop": {
         "description": "Build and program robots in our state-of-the-art workshop",
         "schedule": "Saturdays, 10:00 AM - 2:00 PM",
+        "difficulty": "Advanced",
         "schedule_details": {
             "days": ["Saturday"],
             "start_time": "10:00",
@@ -145,6 +159,7 @@ initial_activities = {
     "Science Olympiad": {
         "description": "Weekend science competition preparation for regional and state events",
         "schedule": "Saturdays, 1:00 PM - 4:00 PM",
+        "difficulty": "Advanced",
         "schedule_details": {
             "days": ["Saturday"],
             "start_time": "13:00",
@@ -197,4 +212,3 @@ initial_teachers = [
         "role": "admin"
     }
 ]
-
