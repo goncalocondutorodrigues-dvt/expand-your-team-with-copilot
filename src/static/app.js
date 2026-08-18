@@ -51,8 +51,25 @@ document.addEventListener("DOMContentLoaded", () => {
     themeToggle.textContent = isDark ? "☀️ Light" : "🌙 Dark";
   }
 
+  function getSavedThemePreference() {
+    try {
+      return localStorage.getItem("themePreference");
+    } catch (error) {
+      console.warn("Unable to read theme preference:", error);
+      return null;
+    }
+  }
+
+  function saveThemePreference(theme) {
+    try {
+      localStorage.setItem("themePreference", theme);
+    } catch (error) {
+      console.warn("Unable to save theme preference:", error);
+    }
+  }
+
   function initializeTheme() {
-    const savedTheme = localStorage.getItem("themePreference");
+    const savedTheme = getSavedThemePreference();
     applyTheme(savedTheme === "dark" ? "dark" : "light");
   }
 
@@ -254,7 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nextTheme = document.body.classList.contains("dark-mode")
       ? "light"
       : "dark";
-    localStorage.setItem("themePreference", nextTheme);
+    saveThemePreference(nextTheme);
     applyTheme(nextTheme);
   });
 
