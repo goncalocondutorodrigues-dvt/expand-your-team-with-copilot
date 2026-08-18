@@ -51,6 +51,89 @@ document.addEventListener("DOMContentLoaded", () => {
     weekend: { days: ["Saturday", "Sunday"] }, // Weekend days
   };
 
+  let pendingSharedActivity = getSharedActivityFromUrl();
+
+  function getSharedActivityFromUrl() {
+    const sharedActivity = new URLSearchParams(window.location.search).get(
+      "activity"
+    );
+    return sharedActivity ? sharedActivity.trim() : "";
+  }
+
+  function buildActivityShareUrl(activityName) {
+    const shareUrl = new URL(window.location.href);
+    shareUrl.searchParams.set("activity", activityName);
+    return shareUrl.toString();
+  }
+
+  async function copyShareLink(shareUrl) {
+    if (!navigator.clipboard?.writeText) {
+      return false;
+    }
+
+    await navigator.clipboard.writeText(shareUrl);
+    showMessage("Share link copied. Send it to a friend!", "success");
+    return true;
+  }
+
+  async function shareActivity(name, details) {
+    const shareUrl = buildActivityShareUrl(name);
+    const shareData = {
+      title: `${name} | Mergington High School`,
+      text: `Check out ${name} at Mergington High School. ${details.description}`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        showMessage("Activity shared successfully.", "success");
+        return;
+      }
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return;
+      }
+
+      console.error("Error sharing activity:", error);
+    }
+
+    try {
+      const copied = await copyShareLink(shareUrl);
+      if (!copied) {
+        showMessage(
+          "Sharing is not available here. Please copy the page link from your browser.",
+          "info"
+        );
+      }
+    } catch (error) {
+      console.error("Error copying share link:", error);
+      showMessage("Unable to share this activity right now.", "error");
+    }
+  }
+
+  function focusSharedActivity() {
+    if (!pendingSharedActivity) {
+      return;
+    }
+
+    const matchingCard = Array.from(
+      activitiesList.querySelectorAll(".activity-card")
+    ).find((card) => card.dataset.activityName === pendingSharedActivity);
+
+    if (!matchingCard) {
+      return;
+    }
+
+    activitiesList
+      .querySelectorAll(".shared-activity-highlight")
+      .forEach((card) => card.classList.remove("shared-activity-highlight"));
+
+    matchingCard.classList.add("shared-activity-highlight");
+    matchingCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    pendingSharedActivity = "";
+  }
+
   // Initialize filters from active elements
   function initializeFilters() {
     // Initialize day filter
@@ -470,12 +553,15 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.entries(filteredActivities).forEach(([name, details]) => {
       renderActivityCard(name, details);
     });
+
+    focusSharedActivity();
   }
 
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
     activityCard.className = "activity-card";
+    activityCard.dataset.activityName = name;
 
     // Calculate spots and capacity
     const totalSpots = details.max_participants;
@@ -568,6 +654,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
         }
+        <button class="secondary-button share-button" data-activity="${name}" type="button">
+          Share with Friends
+        </button>
       </div>
     `;
 
@@ -586,6 +675,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    const shareButton = activityCard.querySelector(".share-button");
+    shareButton.addEventListener("click", async () => {
+      await shareActivity(name, details);
+    });
 
     activitiesList.appendChild(activityCard);
   }
